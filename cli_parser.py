@@ -6,7 +6,7 @@ requiredArgs = parser.add_argument_group('required arguments')
 
 requiredArgs.add_argument('model_file',
                     metavar='PATH',
-                    help='Model file path (by default is modelfile.eim)',
+                    help='Model file path (by default name is modelfile.eim in the Edge Impulse examples)',
                     type=str,
                     nargs=1
                     )
@@ -24,8 +24,7 @@ parser.add_argument('-s', '--connection-string',
                     dest='conn_string',
                     metavar='CONNECTION_STRING',
                     type=str,
-                    help='Azure IoT Device connection string; can also be set \
-                        in the IOTHUB_DEVICE_CONNECTION_STRING environment variable'
+                    help='Azure IoT Device connection string; can also be set in the IOTHUB_DEVICE_CONNECTION_STRING environment variable'
                     )
 
 parser.add_argument('-p', '--camera-port',

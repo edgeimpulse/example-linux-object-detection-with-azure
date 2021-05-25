@@ -11,8 +11,6 @@ from azure.iot.device import Message
 import cli_parser
 
 cli_args = cli_parser.parser.parse_args()
-# TODO: Remove this
-print(cli_args)
 
 runner = None
 WHEEL_COLOR = (200, 10, 0)
@@ -48,7 +46,7 @@ def get_camera() -> int:
     if len(ports) > 1:
         raise Exception("More than one camera found! Use the -p option.")
     if len(ports) == 0:
-        raise Exception("No camera found!")
+        raise Exception("No cameras found!")
     return ports[0]
 
 def sigint_handler(sig, frame):
@@ -67,8 +65,8 @@ async def main():
         raise Exception("No Azure IoT connection string found!")
 
     print("Running lug nut counter with the following options:\n\
-            Model file: {0}\nLug nut count: {1}\nConnection string: {2}\n\n"
-            .format(cli_args.model_file, cli_args.count, conn_str))
+            Model file: {0}\nLug nut count: {1}\nConnection string: {2}\n"
+            .format(cli_args.model_file[0], cli_args.count, conn_str))
 
     # Create instance of the device client using the authentication provider
     device_client = IoTHubDeviceClient.create_from_connection_string(conn_str)
@@ -84,12 +82,12 @@ async def main():
         msg.custom_properties["counted"] = lug_nut_count
         msg.content_type = "application/json"
 
-        print("Sending message {} to Azure IoT Hub", msg)
+        print("Sending message {0} to Azure IoT Hub".format(msg))
         await device_client.send_message(msg)
         print("Message successfully sent!")
     
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    modelfile = os.path.join(dir_path, cli_args.model_file)
+    modelfile = os.path.join(dir_path, cli_args.model_file[0])
 
     with ImageImpulseRunner(modelfile) as runner:
         try:
@@ -115,14 +113,14 @@ async def main():
                         print(f"Found {bb['label']} ({bb['value']: 0.2f}) at\
                             x={bb['x']}, y={bb['y']}, w={bb['width']}, h={bb['height']}")
 
-                        if bb['label'] == 'lug_nut':
+                        if bb['label'] == 'lug':
                             found_lug_nuts += 1
-                        elif bb['label'] == 'wheel':
+                        elif bb['label'] == 'tire':
                             found_wheel = True
 
                         if cli_args.show_cam:
                             label = bb['label']
-                            color = WHEEL_COLOR if label == 'wheel' else LUG_NUT_COLOR
+                            color = WHEEL_COLOR if label == 'tire' else LUG_NUT_COLOR
 
                             cv2.rectangle(img, (bb['x'], bb['y']), 
                                 (bb['x'] + bb['width'], bb['y'] + bb['height']),
@@ -137,6 +135,8 @@ async def main():
                     # Send a message if the count is wrong
                     if found_lug_nuts < cli_args.count and found_wheel == True:
                         await send_alert(found_lug_nuts)
+                        # avoid sending too many messages
+                        time.sleep(2)   
 
                 # 20 fps max
                 next_frame = now() + 50
